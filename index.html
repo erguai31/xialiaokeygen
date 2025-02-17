@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下料计算器注册机</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, system-ui;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+        }
+        .result {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <h2>下料计算器注册机</h2>
+    
+    <div class="input-group">
+        <label>机器码:</label>
+        <input type="text" id="machineCode" maxlength="8">
+    </div>
+
+    <div class="input-group">
+        <label>授权类型:</label>
+        <select id="authType">
+            <option value="forever">永久授权</option>
+            <option value="times">次数授权</option>
+        </select>
+    </div>
+
+    <div class="input-group" id="timesGroup">
+        <label>使用次数:</label>
+        <input type="number" id="times" value="100">
+    </div>
+
+    <button onclick="generateKey()">生成激活码</button>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        function generateRandomKey(length = 8) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function generateKey() {
+            const machineCode = document.getElementById('machineCode').value.trim();
+            if (machineCode.length !== 8) {
+                alert('机器码必须是8位');
+                return;
+            }
+
+            const authType = document.getElementById('authType').value;
+            let times;
+            let timesStr;
+
+            if (authType === 'forever') {
+                times = 999999;
+                timesStr = 'FOREVER';
+            } else {
+                times = parseInt(document.getElementById('times').value);
+                if (times <= 0 || times > 9999) {
+                    alert('使用次数必须在1-9999之间');
+                    return;
+                }
+                timesStr = times.toString();
+            }
+
+            const key = generateRandomKey();
+            const rawInfo = `${machineCode}-${times}-${key}`;
+            const hash = CryptoJS.SHA256(rawInfo).toString().substr(0, 12);
+            
+            const finalInfo = `${key}${hash}${timesStr}`;
+            const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            
+            // Base32 编码
+            let bits = '';
+            for (let i = 0; i < finalInfo.length; i++) {
+                let charCode = finalInfo.charCodeAt(i);
+                bits += charCode.toString(2).padStart(8, '0');
+            }
+            
+            let encoded = '';
+            for (let i = 0; i < bits.length; i += 5) {
+                let chunk = bits.substr(i, 5).padEnd(5, '0');
+                encoded += base32Chars[parseInt(chunk, 2)];
+            }
+            
+            // 格式化显示（每5个字符一组）
+            const formattedCode = encoded.match(/.{1,5}/g).join('-');
+            
+            document.getElementById('result').textContent = formattedCode;
+        }
+
+        // 根据授权类型显示/隐藏次数输入
+        document.getElementById('authType').addEventListener('change', function() {
+            document.getElementById('timesGroup').style.display = 
+                this.value === 'forever' ? 'none' : 'block';
+        });
+    </script>
+</body>
+</html> 
