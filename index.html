@@ -86,19 +86,11 @@
             let result = '';
             for (let i = 0; i < bits.length; i += 5) {
                 let chunk = bits.slice(i, i + 5);
-                // 补齐5位
-                while (chunk.length < 5) {
-                    chunk += '0';
-                }
+                if (chunk.length < 5) break; // 不处理不完整的块
                 result += base32Chars[parseInt(chunk, 2)];
             }
             
-            // 补齐到8的倍数
-            while (result.length % 8 !== 0) {
-                result += '=';
-            }
-            
-            return result;
+            return result; // 移除填充字符
         }
 
         function generateKey() {
