@@ -73,31 +73,42 @@
         }
 
         function base32Encode(str) {
-            // 使用标准的 base32 字母表
             const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
             
-            // 将字符串转换为 UTF-8 字节数组
-            const bytes = new TextEncoder().encode(str);
+            // 手动实现UTF-8编码
+            function strToUTF8Bytes(str) {
+                const bytes = [];
+                for (let i = 0; i < str.length; i++) {
+                    const charCode = str.charCodeAt(i);
+                    if (charCode < 0x80) {
+                        bytes.push(charCode);
+                    } else if (charCode < 0x800) {
+                        bytes.push(0xc0 | (charCode >> 6),
+                                  0x80 | (charCode & 0x3f));
+                    } else if (charCode < 0xd800 || charCode >= 0xe000) {
+                        bytes.push(0xe0 | (charCode >> 12),
+                                  0x80 | ((charCode >> 6) & 0x3f),
+                                  0x80 | (charCode & 0x3f));
+                    }
+                }
+                return bytes;
+            }
             
+            // 转换为UTF-8字节数组
+            const bytes = strToUTF8Bytes(str);
+            
+            // 转换为二进制字符串
             let bits = '';
-            // 将每个字节转换为8位二进制
             for (const byte of bytes) {
                 bits += byte.toString(2).padStart(8, '0');
             }
             
+            // 每5位转换为base32字符
             let result = '';
-            // 每5位一组转换为base32字符
             for (let i = 0; i < bits.length; i += 5) {
                 let chunk = bits.slice(i, i + 5);
-                // 如果最后一组不足5位，补0
                 chunk = chunk.padEnd(5, '0');
                 result += base32Chars[parseInt(chunk, 2)];
-            }
-            
-            // 添加填充字符
-            const padding = [0, 6, 4, 3, 1][bits.length % 5];
-            if (padding) {
-                result += '='.repeat(padding);
             }
             
             return result;
