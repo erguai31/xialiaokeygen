@@ -72,48 +72,6 @@
             return result;
         }
 
-        function base32Encode(str) {
-            const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-            
-            // 手动实现UTF-8编码
-            function strToUTF8Bytes(str) {
-                const bytes = [];
-                for (let i = 0; i < str.length; i++) {
-                    const charCode = str.charCodeAt(i);
-                    if (charCode < 0x80) {
-                        bytes.push(charCode);
-                    } else if (charCode < 0x800) {
-                        bytes.push(0xc0 | (charCode >> 6),
-                                  0x80 | (charCode & 0x3f));
-                    } else if (charCode < 0xd800 || charCode >= 0xe000) {
-                        bytes.push(0xe0 | (charCode >> 12),
-                                  0x80 | ((charCode >> 6) & 0x3f),
-                                  0x80 | (charCode & 0x3f));
-                    }
-                }
-                return bytes;
-            }
-            
-            // 转换为UTF-8字节数组
-            const bytes = strToUTF8Bytes(str);
-            
-            // 转换为二进制字符串
-            let bits = '';
-            for (const byte of bytes) {
-                bits += byte.toString(2).padStart(8, '0');
-            }
-            
-            // 每5位转换为base32字符
-            let result = '';
-            for (let i = 0; i < bits.length; i += 5) {
-                let chunk = bits.slice(i, i + 5);
-                chunk = chunk.padEnd(5, '0');
-                result += base32Chars[parseInt(chunk, 2)];
-            }
-            
-            return result;
-        }
-
         function generateKey() {
             const machineCode = document.getElementById('machineCode').value.trim();
             if (machineCode.length !== 8) {
@@ -137,17 +95,29 @@
                 timesStr = times.toString();
             }
 
+            // 生成随机密钥
             const key = generateRandomKey();
+            
+            // 生成验证哈希
             const rawInfo = `${machineCode}-${times}-${key}`;
             const hash = CryptoJS.SHA256(rawInfo).toString().substr(0, 12);
             
+            // 组合最终信息
             const finalInfo = `${key}${hash}${timesStr}`;
-            const encoded = base32Encode(finalInfo);
+
+            // 使用 btoa 进行 base64 编码
+            const base64Str = btoa(finalInfo);
             
-            // 移除填充字符再格式化
-            const cleanEncoded = encoded.replace(/=/g, '');
-            const formattedCode = cleanEncoded.match(/.{1,5}/g).join('-');
+            // 转换为 base32
+            const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let result = '';
+            for (let i = 0; i < base64Str.length; i++) {
+                const charCode = base64Str.charCodeAt(i);
+                result += base32Chars[charCode % 32];
+            }
             
+            // 格式化显示
+            const formattedCode = result.match(/.{1,5}/g).join('-');
             document.getElementById('result').textContent = formattedCode;
         }
 
