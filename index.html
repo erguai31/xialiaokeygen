@@ -73,24 +73,34 @@
         }
 
         function base32Encode(str) {
+            // 使用标准的 base32 字母表
             const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-            let bits = '';
             
-            // 转换字符串为二进制
-            for (let i = 0; i < str.length; i++) {
-                let charCode = str.charCodeAt(i);
-                bits += charCode.toString(2).padStart(8, '0');
+            // 将字符串转换为 UTF-8 字节数组
+            const bytes = new TextEncoder().encode(str);
+            
+            let bits = '';
+            // 将每个字节转换为8位二进制
+            for (const byte of bytes) {
+                bits += byte.toString(2).padStart(8, '0');
             }
             
-            // 每5位转换为一个Base32字符
             let result = '';
+            // 每5位一组转换为base32字符
             for (let i = 0; i < bits.length; i += 5) {
                 let chunk = bits.slice(i, i + 5);
-                if (chunk.length < 5) break; // 不处理不完整的块
+                // 如果最后一组不足5位，补0
+                chunk = chunk.padEnd(5, '0');
                 result += base32Chars[parseInt(chunk, 2)];
             }
             
-            return result; // 移除填充字符
+            // 添加填充字符
+            const padding = [0, 6, 4, 3, 1][bits.length % 5];
+            if (padding) {
+                result += '='.repeat(padding);
+            }
+            
+            return result;
         }
 
         function generateKey() {
@@ -121,12 +131,11 @@
             const hash = CryptoJS.SHA256(rawInfo).toString().substr(0, 12);
             
             const finalInfo = `${key}${hash}${timesStr}`;
-            
-            // 使用新的Base32编码函数
             const encoded = base32Encode(finalInfo);
             
-            // 格式化显示（每5个字符一组）
-            const formattedCode = encoded.match(/.{1,5}/g).join('-');
+            // 移除填充字符再格式化
+            const cleanEncoded = encoded.replace(/=/g, '');
+            const formattedCode = cleanEncoded.match(/.{1,5}/g).join('-');
             
             document.getElementById('result').textContent = formattedCode;
         }
