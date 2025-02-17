@@ -72,6 +72,35 @@
             return result;
         }
 
+        function base32Encode(str) {
+            const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let bits = '';
+            
+            // 转换字符串为二进制
+            for (let i = 0; i < str.length; i++) {
+                let charCode = str.charCodeAt(i);
+                bits += charCode.toString(2).padStart(8, '0');
+            }
+            
+            // 每5位转换为一个Base32字符
+            let result = '';
+            for (let i = 0; i < bits.length; i += 5) {
+                let chunk = bits.slice(i, i + 5);
+                // 补齐5位
+                while (chunk.length < 5) {
+                    chunk += '0';
+                }
+                result += base32Chars[parseInt(chunk, 2)];
+            }
+            
+            // 补齐到8的倍数
+            while (result.length % 8 !== 0) {
+                result += '=';
+            }
+            
+            return result;
+        }
+
         function generateKey() {
             const machineCode = document.getElementById('machineCode').value.trim();
             if (machineCode.length !== 8) {
@@ -100,20 +129,9 @@
             const hash = CryptoJS.SHA256(rawInfo).toString().substr(0, 12);
             
             const finalInfo = `${key}${hash}${timesStr}`;
-            const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
             
-            // Base32 编码
-            let bits = '';
-            for (let i = 0; i < finalInfo.length; i++) {
-                let charCode = finalInfo.charCodeAt(i);
-                bits += charCode.toString(2).padStart(8, '0');
-            }
-            
-            let encoded = '';
-            for (let i = 0; i < bits.length; i += 5) {
-                let chunk = bits.substr(i, 5).padEnd(5, '0');
-                encoded += base32Chars[parseInt(chunk, 2)];
-            }
+            // 使用新的Base32编码函数
+            const encoded = base32Encode(finalInfo);
             
             // 格式化显示（每5个字符一组）
             const formattedCode = encoded.match(/.{1,5}/g).join('-');
